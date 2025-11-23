@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-db-svc # 이전 Service와 동일한 이름을 사용해도 됩니다. 백엔드는 이 이름으로 DB를 찾습니다.
+spec:
+  # clusterIP: None 으로 설정하여 Headless 서비스로 만듭니다.
+  clusterIP: None
+  selector:
+    # 이 서비스가 어떤 Pod을 찾을지 라벨을 지정합니다.
+    # StatefulSet의 Pod 라벨과 일치해야 합니다.
+    app: todo-db
+  ports:
+    - protocol: TCP
+      port: 3306 # Service가 노출할 포트
+      targetPort: 3306
