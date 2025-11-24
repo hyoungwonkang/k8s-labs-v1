@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: my-ingress-host-based
 spec:
+  ingressClassName: nginx
   rules:
     # --- 첫 번째 호스트 규칙 ---
     - host: a.example.com # a.example.com 으로 들어온 요청은

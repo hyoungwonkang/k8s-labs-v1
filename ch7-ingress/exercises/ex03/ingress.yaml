@@ -6,6 +6,7 @@ metadata:
     # rewrite-target 어노테이션은 그대로 유지합니다.
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   # defaultBackend를 추가합니다.
   # 어떤 규칙과도 맞지 않는 요청이 들어올 경우, 기본적으로 hello-service로 보냅니다.
   # 이렇게 하면 '정문 주소'로만 접속해도 404 대신 페이지가 보입니다.
@@ -18,8 +19,8 @@ spec:
     - http:
         paths:
           # 경로 끝에 '/'를 추가하여 더 명확하게 만듭니다.
-          - path: /hello
-            pathType: Prefix
+          - path: /hello # 어떤 서비스로 라우팅
+            pathType: Prefix # /hello/service 도 /hello 로 라우팅
             backend:
               service:
                 name: hello-service
