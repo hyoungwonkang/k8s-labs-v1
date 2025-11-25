@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo-list-chart.fullname" . }}-backend
+  labels:
+    {{- include "todo-list-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "todo-list-chart.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "todo-list-chart.backend.selectorLabels" . | nindent 6 }}
+    spec:
+      containers:
+      - name: todo-backend
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_HOST
+          value: "todo-db-service"
+        # ...

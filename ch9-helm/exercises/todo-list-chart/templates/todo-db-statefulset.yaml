@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "todo-list-chart.fullname" . }}-db
+  labels:
+    {{- include "todo-list-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  serviceName: "todo-db-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "todo-list-chart.database.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "todo-list-chart.database.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        envFrom:
+        - secretRef:
+            name: {{ include "todo-list-chart.fullname" . }}-db-secret
+        - configMapRef:
+            name: {{ include "todo-list-chart.fullname" . }}-db-configmap
+        # ... volumeMounts ...
+  # ... volumeClaimTemplates ...
