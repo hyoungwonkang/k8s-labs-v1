@@ -1,0 +1,116 @@
+# Todo List Application Configuration
+
+# Global settings
+nameOverride: ""
+fullnameOverride: ""
+
+# Backend configuration
+backend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: captainyun/k8s-labs-todo-backend
+    tag: "v1.0"
+    pullPolicy: Always
+
+  service:
+    type: NodePort
+    port: 8080
+    targetPort: 8080
+    nodePort:
+      enabled: true
+      port: 32080
+
+  env:
+    corsAllowedOrigins: "http://192.168.94.11:32000"
+    jwtExpirationMs: "36000000"
+
+  resources: {}
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Frontend configuration
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: captainyun/k8s-labs-todo-frontend
+    tag: "v1.0"
+    pullPolicy: Always
+
+  service:
+    type: NodePort
+    port: 3000
+    targetPort: 3000
+    nodePort:
+      enabled: true
+      port: 32000
+
+  env:
+    apiUrl: "http://192.168.94.202"
+
+  resources: {}
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Database configuration
+database:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3306
+    targetPort: 3306
+
+  auth:
+    rootPassword: "1234"
+    database: "todolist"
+    username: "root"
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+
+  persistence:
+    enabled: true
+    storageClass: "mysql-storage"
+    accessMode: ReadWriteOnce
+    size: 2Gi
+    localPath: /data/mysql
+    nodeAffinity:
+      hostname: k8s-worker1
+
+  resources: {}
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://192.168.94.11:32000"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization"
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+  tls: []
