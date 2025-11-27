@@ -7,7 +7,7 @@ on:
     paths:
       - "apps/todo-list/backend/**"
 
-# 실행될 작업(Job)들
+# 실행될 작업(Job)
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
