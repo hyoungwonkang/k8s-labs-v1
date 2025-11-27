@@ -2,7 +2,7 @@
 
 # 1. 베이스 이미지로 Java 17 런타임 환경을 선택합니다.
 # build tool이 없는 순수한 실행 환경이므로 훨씬 가볍습니다.
-FROM openjdk:temurin-17-jdk-alpine
+FROM eclipse-temurin:17-jdk-alpine
 
 # 2. GitHub Actions의 빌드 단계에서 생성된 JAR 파일의 경로를 인자로 받습니다.
 # 기본값은 build/libs/ 디렉토리의 모든 .jar 파일을 의미합니다.
