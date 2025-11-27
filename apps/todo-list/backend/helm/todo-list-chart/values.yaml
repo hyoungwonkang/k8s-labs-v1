@@ -1,7 +1,7 @@
 backend:
   replicaCount: 2
   image:
-    repository: captainyun/k8s-labs-todo-backend
+    repository: hwplus/k8s-labs-todo-backend
     tag: v1.0
   service:
     type: NodePort
