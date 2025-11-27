@@ -1,6 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: {{ .Release.Namespace }}
   name: {{ include "todo-list-chart.fullname" . }}-backend-deployment
   labels:
     {{- include "todo-list-chart.labels" . | nindent 4 }}
