@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "todo-list-chart.fullname" . }}-db-configmap
+  labels: {{- include "todo-list-chart.labels" . | nindent 4 }}
+data:
+  # Frontend Config (브라우저에서 접근하므로 Ingress IP 사용)
+  VITE_API_URL: {{ .Values.frontend.api_url }}
+  # Backend Config
+  SPRING_DATASOURCE_URL: "jdbc:mysql://{{ include "todo-list-chart.fullname" . }}-db-service:3306/{{.Values.database.name}}"
+  SPRING_DATASOURCE_USERNAME: {{.Values.database.user}}
+  CORS_ALLOWED_ORIGINS: {{ .Values.backend.cors_allowed_origins }}
+  # DB Config
+  MYSQL_DATABASE: {{.Values.database.name}}
+  MYSQL_USER: {{.Values.database.user}}

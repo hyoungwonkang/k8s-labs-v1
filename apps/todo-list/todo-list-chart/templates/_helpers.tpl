@@ -47,6 +47,15 @@ app.kubernetes.io/component: backend
 {{- end -}}
 
 {{/*
+Selector labels for Frontend component
+*/}}
+{{- define "todo-list-chart.frontend.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "todo-list-chart.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: frontend
+{{- end -}}
+
+{{/*
 Selector labels for Database component
 */}}
 {{- define "todo-list-chart.database.selectorLabels" -}}

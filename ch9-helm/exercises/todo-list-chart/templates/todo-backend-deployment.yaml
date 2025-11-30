@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "todo-list-chart.backend.selectorLabels" . | nindent 6 }}
+        {{- include "todo-list-chart.backend.selectorLabels" . | nindent 8 }}
     spec:
       containers:
       - name: todo-backend
@@ -23,4 +23,8 @@ spec:
         env:
         - name: DB_HOST
           value: "todo-db-service"
-        # ...
+        envFrom:
+        - configMapRef:
+            name: {{ include "todo-list-chart.fullname" . }}-db-configmap
+        - secretRef:
+            name: {{ include "todo-list-chart.fullname" . }}-db-secret

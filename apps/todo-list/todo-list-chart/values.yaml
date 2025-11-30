@@ -1,0 +1,38 @@
+frontend:
+  replicaCount: 2
+  image:
+    repository: hwplus/k8s-labs-todo-frontend
+  service:
+    type: NodePort
+    port: 3000
+    targetPort: 3000
+    nodePort:
+      enabled: true
+      port: 30000
+  api_url: http://192.168.60.129:30002
+  nodeSelector:
+    kubernetes.io/hostname: k8s-worker3
+
+backend:
+  replicaCount: 2
+  image:
+    repository: captainyun/k8s-labs-todo-backend
+    tag: latest
+  service:
+    type: NodePort
+    port: 8080
+    targetPort: 8080
+    nodePort:
+      enabled: true
+      port: 30002
+  cors_allowed_origins: http://192.168.60.129:30000
+  nodeSelector:
+    kubernetes.io/hostname: k8s-worker3
+
+database:
+  name: tododb
+  user: todouser
+  password: "todo1234"
+  rootPassword: "root1234"
+  nodeSelector:
+    kubernetes.io/hostname: k8s-worker3

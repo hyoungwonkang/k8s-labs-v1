@@ -17,12 +17,12 @@ spec:
     spec:
       containers:
         - name: todo-backend
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          image: "{{ .Values.backend.image.repository }}{{ if .Values.backend.image.tag }}:{{ .Values.backend.image.tag }}{{ end }}"
           ports:
             - containerPort: 8080
           env:
             - name: DB_HOST
-              value: "todo-db-service"
+              value: {{ include "todo-list-chart.fullname" . }}-db-service
             - name: CORS_ALLOWED_ORIGINS
               value: {{ .Values.backend.cors_allowed_origins }}
           envFrom:

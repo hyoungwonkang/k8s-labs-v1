@@ -9,13 +9,17 @@ spec:
   selector:
     matchLabels:
       {{- include "todo-list-chart.database.selectorLabels" . | nindent 6 }}
-  serviceName: "todo-db-service"
+  serviceName: {{ include "todo-list-chart.fullname" . }}-db-service
   replicas: 1
   template:
     metadata:
       labels:
         {{- include "todo-list-chart.database.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.database.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.database.nodeSelector | nindent 8 }}
+      {{- end }}
       containers:
       - name: mysql
         image: mysql:8.0
@@ -33,6 +37,7 @@ spec:
   - metadata:
       name: todo-persistent-storage
     spec:
+      storageClassName: "todo-db-storage"
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
