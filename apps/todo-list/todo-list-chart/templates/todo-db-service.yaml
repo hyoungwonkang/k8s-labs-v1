@@ -2,7 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "todo-list-chart.fullname" . }}-db-service
+  # Keep stable name to match existing StatefulSet.serviceName
+  name: todo-db-service
   labels: {{- include "todo-list-chart.labels" . | nindent 4 }}
 spec:
   ports:

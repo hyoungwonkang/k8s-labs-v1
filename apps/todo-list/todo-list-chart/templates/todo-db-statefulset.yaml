@@ -9,7 +9,8 @@ spec:
   selector:
     matchLabels:
       {{- include "todo-list-chart.database.selectorLabels" . | nindent 6 }}
-  serviceName: {{ include "todo-list-chart.fullname" . }}-db-service
+  # Match existing immutable serviceName in cluster to avoid patch failures
+  serviceName: todo-db-service
   replicas: 1
   template:
     metadata:
@@ -37,7 +38,7 @@ spec:
   - metadata:
       name: todo-persistent-storage
     spec:
-      storageClassName: "todo-db-storage"
+      # storageClassName omitted to match existing PVC (immutable)
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
