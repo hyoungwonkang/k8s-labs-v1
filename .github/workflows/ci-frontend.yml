@@ -68,18 +68,16 @@ jobs:
           path: manifests
           fetch-depth: 1
 
-      # 10. YAML 수정 도구(yq) 설치 (sudo 없이 사용자 공간에 설치)
+      # 10. yq 설치 (직접 다운로드 후 환경변수 설정)
       - name: Install yq
         run: |
-          if ! command -v yq >/dev/null 2>&1; then
-            YQ_DIR="$HOME/.local/bin"
-            mkdir -p "$YQ_DIR"
-            curl -L -o "$YQ_DIR/yq" https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-            chmod +x "$YQ_DIR/yq"
-            echo "$YQ_DIR" >> $GITHUB_PATH
-            export PATH="$YQ_DIR:$PATH"
-          fi
-          "$YQ_DIR/yq" --version || yq --version
+          set -e
+          YQ_DIR="$HOME/.local/bin"
+          mkdir -p "$YQ_DIR"
+          curl -sL -o "$YQ_DIR/yq" https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          chmod +x "$YQ_DIR/yq"
+          echo "YQ_BIN=$YQ_DIR/yq" >> $GITHUB_ENV
+          "$YQ_DIR/yq" --version
       
       # 11. Helm 배포 지시서의 이미지 태그 업데이트
       - name: Update image tag in ArgoCD Application manifest
@@ -93,12 +91,10 @@ jobs:
           fi
 
           # frontend.image.tag 파라미터 업데이트
-          yq e "(.spec.source.helm.parameters[] | select(.name == \"frontend.image.tag\") | .value) = \"$NEW_TAG\"" \
-            -i manifests/todo-list-application.yaml
+          "$YQ_BIN" e "(.spec.source.helm.parameters[] | select(.name == \"frontend.image.tag\") | .value) = \"$NEW_TAG\"" -i manifests/todo-list-application.yaml
 
           echo "Updated manifest:"
-          yq e '.spec.source.helm.parameters[] | select(.name == "frontend.image.tag")' \
-            manifests/todo-list-application.yaml
+          "$YQ_BIN" e '.spec.source.helm.parameters[] | select(.name == "frontend.image.tag")' manifests/todo-list-application.yaml
           
       # 12. 변경 사항 커밋 및 푸시
       - name: Commit and push changes
