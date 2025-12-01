@@ -66,6 +66,7 @@ jobs:
           token: ${{ secrets.ACTION_PAT }}
           repository: ${{ github.repository_owner }}/k8s-labs-todo-list-manifests
           path: manifests
+          fetch-depth: 1
 
       # 10. YAML 수정 도구(yq) 설치
       - name: Install yq
