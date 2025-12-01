@@ -18,3 +18,4 @@ jwt:
   secret: ${JWT_SECRET:verylongsecretkeyforlocaldevelopmentuseonly1234567890}
   expirationMs: ${JWT_expirationMs:3600000}
 // Test CI
+// trigger
