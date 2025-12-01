@@ -16,7 +16,8 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: captainyun/k8s-labs-todo-backend
+    repository: hwplus/k8s-labs-todo-backend
+    # tag는 ArgoCD helm.parameters에서 자동으로 override됨. 기본값은 유지 가능.
     tag: latest
   service:
     type: NodePort

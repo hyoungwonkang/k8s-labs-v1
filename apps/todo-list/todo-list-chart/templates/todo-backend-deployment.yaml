@@ -25,6 +25,15 @@ spec:
               value: {{ include "todo-list-chart.fullname" . }}-db-service
             - name: CORS_ALLOWED_ORIGINS
               value: {{ .Values.backend.cors_allowed_origins }}
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://{{ include "todo-list-chart.fullname" . }}-db-service:3306/{{ .Values.database.name }}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=UTC"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: {{ .Values.database.user }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "todo-list-chart.fullname" . }}-db-secret
+                  key: MYSQL_PASSWORD
           envFrom:
             - configMapRef:
                 name: {{ include "todo-list-chart.fullname" . }}-db-configmap
