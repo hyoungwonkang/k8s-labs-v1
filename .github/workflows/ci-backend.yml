@@ -10,7 +10,7 @@ on:
 # 실행될 작업(Job)
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       # 1. 소스 코드 체크아웃
       - name: Checkout source code
