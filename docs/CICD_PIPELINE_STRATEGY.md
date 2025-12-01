@@ -4,8 +4,9 @@
 1. [전체 아키텍처](#전체-아키텍처)
 2. [Backend 파이프라인](#backend-파이프라인)
 3. [Frontend 파이프라인](#frontend-파이프라인)
-4. [ArgoCD 통합](#argocd-통합)
-5. [트러블슈팅](#트러블슈팅)
+4. [ArgoCD 설치 및 설정](#argocd-설치-및-설정)
+5. [ArgoCD 통합](#argocd-통합)
+6. [트러블슈팅](#트러블슈팅)
 
 ---
 
@@ -345,6 +346,178 @@ Backend와 동일한 프로세스
 
 ---
 
+## ArgoCD 설치 및 설정
+
+### 1. ArgoCD 설치
+
+#### 네임스페이스 생성 및 ArgoCD 설치
+```bash
+# ArgoCD 네임스페이스 생성
+kubectl create namespace argocd
+
+# ArgoCD 설치 (최신 안정 버전)
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# 설치 확인
+kubectl get pods -n argocd
+# 모든 Pod가 Running 상태가 될 때까지 대기 (약 1-2분)
+```
+
+#### ArgoCD Server 외부 노출 (NodePort)
+```bash
+# argocd-server 서비스를 NodePort로 변경
+kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort"}}'
+
+# 할당된 NodePort 확인
+kubectl get svc argocd-server -n argocd
+# 출력 예시:
+# NAME            TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+# argocd-server   NodePort   10.96.123.45    <none>        80:32053/TCP,443:31234/TCP   2m
+```
+
+또는 특정 NodePort 지정:
+```bash
+kubectl patch svc argocd-server -n argocd --type='json' -p='[
+  {"op": "replace", "path": "/spec/type", "value": "NodePort"},
+  {"op": "add", "path": "/spec/ports/0/nodePort", "value": 32053}
+]'
+```
+
+### 2. ArgoCD UI 접속
+
+#### 초기 admin 비밀번호 확인
+```bash
+# ArgoCD 초기 admin 비밀번호 조회
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
+
+# 출력 예시: mY8sEcUrEpAsSwOrD123
+```
+
+#### 브라우저 접속
+```
+URL: http://<control-plane-IP>:32053
+사용자명: admin
+비밀번호: (위에서 조회한 값)
+
+예시: http://192.168.80.129:32053
+```
+
+#### 비밀번호 변경 (권장)
+```bash
+# ArgoCD CLI 설치 (선택사항)
+curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+chmod +x /usr/local/bin/argocd
+
+# ArgoCD 로그인
+argocd login 192.168.80.129:32053 --insecure
+# Username: admin
+# Password: (초기 비밀번호 입력)
+
+# 비밀번호 변경
+argocd account update-password
+# Current password: (초기 비밀번호)
+# New password: (새 비밀번호)
+# Confirm new password: (새 비밀번호 확인)
+```
+
+### 3. Application 생성 방법
+
+#### 방법 1: kubectl로 YAML 적용 (권장)
+
+**Manifests 저장소에 Application YAML 생성**:
+
+1. `k8s-labs-todo-list-manifests` 저장소 생성 (아직 없는 경우)
+2. `todo-list-application.yaml` 파일 생성 및 커밋
+
+```bash
+# Manifests 저장소 클론
+git clone https://github.com/<your-account>/k8s-labs-todo-list-manifests.git
+cd k8s-labs-todo-list-manifests
+
+# Application YAML 작성 (아래 예시 참고)
+vim todo-list-application.yaml
+
+# Git에 커밋 및 푸시
+git add todo-list-application.yaml
+git commit -m "feat: Add ArgoCD Application manifest"
+git push origin main
+```
+
+**Application 적용**:
+```bash
+# 로컬에서 적용
+kubectl apply -f todo-list-application.yaml
+
+# 또는 URL에서 직접 적용
+kubectl apply -f https://raw.githubusercontent.com/<your-account>/k8s-labs-todo-list-manifests/main/todo-list-application.yaml
+
+# 생성 확인
+kubectl get application -n argocd
+kubectl describe application todo-list-backend-app -n argocd
+```
+
+#### 방법 2: ArgoCD UI 사용
+
+1. ArgoCD UI 접속 (`http://<control-plane-IP>:32053`)
+2. 좌측 상단 **`+ NEW APP`** 버튼 클릭
+3. Application 정보 입력:
+   - **Application Name**: `todo-list-backend-app`
+   - **Project**: `default`
+   - **Sync Policy**: `Automatic` (Auto-Create Namespace 체크)
+   - **Repository URL**: `https://github.com/hyoungwonkang/k8s-labs-v1.git`
+   - **Revision**: `main`
+   - **Path**: `apps/todo-list/todo-list-chart`
+   - **Cluster**: `https://kubernetes.default.svc`
+   - **Namespace**: `default`
+4. **Helm Parameters** 섹션에서:
+   - `backend.image.tag`: `initial` (CI가 업데이트)
+   - `frontend.image.tag`: `initial` (CI가 업데이트)
+5. **CREATE** 버튼 클릭
+
+#### 방법 3: ArgoCD CLI 사용
+
+```bash
+# ArgoCD 로그인 (이미 했다면 생략)
+argocd login 192.168.80.129:32053 --insecure
+
+# Application 생성
+argocd app create todo-list-backend-app \
+  --repo https://github.com/hyoungwonkang/k8s-labs-v1.git \
+  --path apps/todo-list/todo-list-chart \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace default \
+  --helm-set backend.image.tag=initial \
+  --helm-set frontend.image.tag=initial \
+  --sync-policy automated \
+  --auto-prune \
+  --self-heal
+
+# 생성 확인
+argocd app get todo-list-backend-app
+```
+
+### 4. 초기 동기화
+
+```bash
+# Application 수동 동기화 (최초 1회)
+kubectl patch application todo-list-backend-app -n argocd \
+  --type merge -p '{"operation": {"initiatedBy": {"username": "admin"}, "sync": {}}}'
+
+# 또는 CLI로
+argocd app sync todo-list-backend-app
+
+# 또는 UI에서 SYNC 버튼 클릭
+
+# 동기화 상태 확인
+kubectl get application todo-list-backend-app -n argocd
+argocd app get todo-list-backend-app
+
+# Pod 배포 확인
+kubectl get pods -n default
+```
+
+---
+
 ## ArgoCD 통합
 
 ### Application 구조
@@ -364,15 +537,15 @@ spec:
   source:
     repoURL: https://github.com/hyoungwonkang/k8s-labs-v1.git
     targetRevision: main
-    path: apps/todo-list/backend/helm/todo-list-chart  # Helm Chart 경로
+    path: apps/todo-list/todo-list-chart  # Umbrella Helm Chart 경로
     helm:
+      valueFiles:
+        - values.yaml
       parameters:
         - name: backend.image.tag
           value: "2effa4f"      # CI가 자동 업데이트
         - name: frontend.image.tag
           value: "abc1234"      # CI가 자동 업데이트
-        - name: backend.replicaCount
-          value: "2"
   destination:
     server: https://kubernetes.default.svc
     namespace: default
@@ -386,31 +559,57 @@ spec:
 
 ### Helm Values 구조
 
-**파일**: `apps/todo-list/backend/helm/todo-list-chart/values.yaml`
+**파일**: `apps/todo-list/todo-list-chart/values.yaml` (Umbrella Chart)
 
 ```yaml
 backend:
   replicaCount: 2
   image:
     repository: hwplus/k8s-labs-todo-backend
-    tag: "2effa4f"  # ArgoCD parameters가 이 값을 덮어씀
+    tag: "latest"  # ArgoCD parameters가 이 값을 덮어씀
   service:
-    type: NodePort
+    type: ClusterIP
     port: 8080
     targetPort: 8080
-    nodePort:
-      enabled: true
-      port: 30001
-  cors_allowed_origins: http://localhost:3000
+  env:
+    - name: SPRING_DATASOURCE_URL
+      value: "jdbc:mysql://todo-db-service:3306/tododb?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=UTC"
+    - name: SPRING_DATASOURCE_USERNAME
+      value: "todouser"
+    - name: CORS_ALLOWED_ORIGINS
+      value: "http://192.168.60.129:30000"
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: hwplus/k8s-labs-todo-frontend
+    tag: "latest"  # ArgoCD parameters가 이 값을 덮어씀
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
 
 database:
+  enabled: true
   name: tododb
   user: todouser
   password: "todo1234"
   rootPassword: "root1234"
+  storageClass: "todo-db-storage"
+  persistence:
+    size: "1Gi"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: todo.example.com
+  frontend:
+    path: /
+    serviceName: frontend-service
+    servicePort: 80
 ```
 
-> **참고**: Frontend 설정은 별도의 values.yaml에 있을 수 있음 (`apps/todo-list/todo-list-chart/values.yaml`)
+> **참고**: 위 구조는 umbrella chart 방식으로, backend, frontend, database를 단일 chart로 관리합니다.
 
 ### 동기화 정책
 
